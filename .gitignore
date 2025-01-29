@@ -1,0 +1,14 @@
+logs
+target
+/.bsp
+/.idea
+/.idea_modules
+/.classpath
+/.project
+/.settings
+/RUNNING_PID
+/.g8
+build.sc
+rough.txt
+docker-compose.yml
+conf/messages
