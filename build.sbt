@@ -13,3 +13,5 @@ libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "42.5.1"
 )
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1" % Test
+
+Test/javaOptions ++= Seq("-Dconfig.file=conf/application-test.conf")
