@@ -2,7 +2,7 @@ package controllers
 
 import dao.User
 import models.CreateUserRequest
-import play.api.libs.json.{JsString, Json}
+import play.api.libs.json.{JsArray, JsString, Json}
 import play.api.mvc.{BaseController, ControllerComponents}
 
 import javax.inject.Inject
@@ -27,8 +27,12 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
 
   def getBankUserByValidId(id: String) = Action.async { implicit request =>
     user.getUserIdByvalidId(id).map{
-      case Left(e) => BadRequest(e.getMessage)
-      case Right(rows) => Ok(
+      case Left(e) =>
+        println("ended - 404")
+        BadRequest(e.getMessage)
+      case Right(rows) =>
+        println(s"ended - 200 ${rows.length}")
+        Ok(
         Json.obj(
           "status" -> 200,
           "description" -> "User retrieved successfully",
@@ -36,8 +40,32 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
         )
       )
     }.recoverWith {
-      case ex: Exception => Future.successful(InternalServerError(ex.getMessage))
+      case ex: Exception =>
+        println(s"ended ${ex.getMessage}")
+        Future.successful(InternalServerError(ex.getMessage))
     }
   }
+
+  def getBankUsers() = Action.async { implicit request =>
+    user.getUsers().map {
+      case Left(e) =>
+        println("ended - 404")
+        BadRequest(e.getMessage)
+      case Right(rows) =>
+        println(s"ended - 200 ${rows.head.toString}")
+        Ok(
+        Json.obj(
+          "status" -> 200,
+          "description" -> "Users retrieved successfully",
+          "users" -> JsArray(rows.map(row => Json.parse(row.toJsonString)))
+        )
+      )
+    }.recoverWith {
+      case ex: Exception =>
+        println(s"ended ${ex.getMessage}")
+        Future.successful(InternalServerError(ex.getMessage))
+    }
+  }
+
 
 }

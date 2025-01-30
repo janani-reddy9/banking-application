@@ -2,6 +2,7 @@ package dao
 
 import models._
 import play.api.Configuration
+import slick.jdbc.{GetResult, PositionedResult}
 import utils.Miscs.generateUniqueId
 
 import java.sql.SQLException
@@ -17,20 +18,21 @@ class User @Inject() (configuration: Configuration, crud: CRUD)(implicit ec: Exe
     crud.insert(tableName, valuesToInsert)
   }
 
-  def getUserIdByvalidId(validId: String): Future[Either[SQLException, List[String]]] = crud.select(
-    tableName = tableName,
-    Some("id"),
-    Some(s"where validId = \'$validId\'")
-  )
+  def getUserIdByvalidId(validId: String): Future[Either[SQLException, List[String]]] = {
+    println("started")
+    crud.select[String](
+      tableName = tableName,
+      Some("id"),
+      Some(s"where validId = \'$validId\'")
+    )(GetResult(r => r.nextString()))
+  }
 
-//  def getUserById(id: String): Future[Either[SQLException, Int]] = crud.select(
-//      tableName = tableName,
-//      condition = Some(s"where id = \'$id\'")
-//    )
-//
-//  def getAllUsers(limit: Int = 50): Future[Either[SQLException, Int]] = crud.select(
-//    tableName = tableName,
-//    condition = Some(s"limit $limit")
-//  )
+  def getUsers(limit: Int = 50): Future[Either[SQLException, List[models.User]]] = {
+    println("started")
+    crud.select[models.User](
+      tableName = tableName,
+      condition = Some(s"limit $limit")
+    )(GetResult(r => models.User(r.nextString(), r.nextString(), r.nextString(), r.nextString(), r.nextString(), r.nextString())))
+  }
 
 }

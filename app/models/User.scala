@@ -14,5 +14,14 @@ case class FieldDetails(key: String, value: String)
 
 case class UpdateUserRequest(userId: String, sessionId: String, updates: Seq[FieldDetails])
 
-case class User(id: String, validId: String,  name: String, email: String, address: String, phoneNumber: String)
+case class User(id: String, validId: String,  name: String, email: String, address: String, phoneNumber: String) {
+  def toJsonString: String = Json.obj(
+    "id" -> id,
+    "validId" -> validId,
+    "name" -> name,
+    "email" -> email,
+    "address" -> address,
+    "phoneNumber" -> phoneNumber
+  ).toString()
+}
 

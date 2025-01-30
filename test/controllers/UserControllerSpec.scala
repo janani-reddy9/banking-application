@@ -33,5 +33,11 @@ class UserControllerSpec extends PlaySpec with GuiceOneAppPerSuite {
       println(contentAsString(user))
     }
 
+    "get user by row" in {
+      val user = userController.getBankUsers().apply(FakeRequest(GET, "/users/getBankUserByRow"))
+      status(user) mustEqual OK
+      println(contentAsString(user))
+    }
+
   }
 }

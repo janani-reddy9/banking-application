@@ -3,7 +3,7 @@ package dao
 import org.slf4j
 import play.api.Logger
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import slick.jdbc.JdbcProfile
+import slick.jdbc.{GetResult, JdbcProfile}
 
 import java.sql.SQLException
 import javax.inject.Inject
@@ -33,17 +33,19 @@ class CRUD @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(im
     }
   }
 
-  def select(tableName: String, columnsToRetrive: Option[String] = Some("*"), condition: Option[String] = Some("")): Future[Either[SQLException, List[String]]] = {
+  def select[T](tableName: String, columnsToRetrive: Option[String] = Some("*"), condition: Option[String] = Some(""))
+               (implicit getResult: GetResult[T]): Future[Either[SQLException, List[T]]] = {
     val finalColumnsToRetrive = if (columnsToRetrive.isEmpty) "*" else columnsToRetrive.get
     val finalCondition = if (condition.isEmpty) "" else condition.get
     val selectCommand = s"select $finalColumnsToRetrive FROM $tableName $finalCondition;"
     println(s"sql - $selectCommand")
-    val query = sql"#$selectCommand".as[String]
+    val query = sql"#$selectCommand".as[T]
     val runQuery = Try(db.run(query))
     runQuery match {
       case Success(value) =>
         logger.info(s"Retrived successfully")
-        value.flatMap(rows => Future(Right(rows.toList)))
+        val output = value.flatMap(rows => Future(Right(rows.toList)))
+        output
       case Failure(exception: SQLException) =>
         logger.error(s"SQL Exception occurred: ${exception.printStackTrace()}")
         Future(Left(exception))
