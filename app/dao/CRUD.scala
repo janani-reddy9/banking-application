@@ -17,7 +17,7 @@ class CRUD @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(im
 
   def insert(tableName: String, values: String): Future[Either[Exception, Int]] = {
     val insertCommand = s"INSERT INTO $tableName VALUES($values);"
-    logger.info(s"sql - $insertCommand")
+    logger.info(s"sql insert- $insertCommand")
     val query = sqlu"#$insertCommand"
     val runQuery = Try(db.run(query))
     runQuery match {
@@ -33,19 +33,35 @@ class CRUD @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(im
     }
   }
 
+  def update(tableName: String, values: String, condition: String): Future[Either[Exception, Int]] = {
+    val updateCommand = s"UPDATE $tableName SET $values WHERE $condition;"
+    logger.info(s"sql update - $updateCommand")
+    val query = sqlu"#$updateCommand"
+    val runQuery = Try(db.run(query))
+    runQuery match {
+      case Success(value) =>
+        logger.info(s"Updated successfully")
+        value.map(rowCount => Right(rowCount))
+      case Failure(exception: SQLException) =>
+        logger.error(s"SQL Exception occurred: ${exception.printStackTrace()}")
+        Future(Left(exception))
+      case Failure(e) =>
+        logger.error(s"An unexpected error occurred: ${e.printStackTrace()}")
+        throw e
+    }
+  }
+
   def select[T](tableName: String, columnsToRetrive: Option[String] = Some("*"), condition: Option[String] = Some(""))
                (implicit getResult: GetResult[T]): Future[Either[SQLException, List[T]]] = {
     val finalColumnsToRetrive = if (columnsToRetrive.isEmpty) "*" else columnsToRetrive.get
     val finalCondition = if (condition.isEmpty) "" else condition.get
     val selectCommand = s"select $finalColumnsToRetrive FROM $tableName $finalCondition;"
-    println(s"sql - $selectCommand")
     val query = sql"#$selectCommand".as[T]
     val runQuery = Try(db.run(query))
     runQuery match {
       case Success(value) =>
         logger.info(s"Retrived successfully")
-        val output = value.flatMap(rows => Future(Right(rows.toList)))
-        output
+        value.flatMap(rows => Future(Right(rows.toList)))
       case Failure(exception: SQLException) =>
         logger.error(s"SQL Exception occurred: ${exception.printStackTrace()}")
         Future(Left(exception))

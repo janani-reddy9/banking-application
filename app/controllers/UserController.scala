@@ -1,14 +1,15 @@
 package controllers
 
-import dao.User
-import models.CreateUserRequest
+import dao.UserDAO
+import models.{CreateUserRequest, DeactivateUserRequest, UpdateUserRequest}
+import org.apache.pekko.Done
 import play.api.libs.json.{JsArray, JsString, Json}
 import play.api.mvc.{BaseController, ControllerComponents}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class UserController @Inject()(val controllerComponents: ControllerComponents, user: User)(implicit ec: ExecutionContext) extends BaseController {
+class UserController @Inject()(val controllerComponents: ControllerComponents, user: UserDAO)(implicit ec: ExecutionContext) extends BaseController {
 
   def createBankUser = Action.async(parse.json) { implicit request =>
     val createUserRequest = Json.parse(request.body.toString()).as[CreateUserRequest]
@@ -25,14 +26,10 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
     }
   }
 
-  def getBankUserByValidId(id: String) = Action.async { implicit request =>
+  def getBankUserByValidId(id: String) = Action.async {
     user.getUserIdByvalidId(id).map{
-      case Left(e) =>
-        println("ended - 404")
-        BadRequest(e.getMessage)
-      case Right(rows) =>
-        println(s"ended - 200 ${rows.length}")
-        Ok(
+      case Left(e) => BadRequest(e.getMessage)
+      case Right(rows) => Ok(
         Json.obj(
           "status" -> 200,
           "description" -> "User retrieved successfully",
@@ -40,20 +37,14 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
         )
       )
     }.recoverWith {
-      case ex: Exception =>
-        println(s"ended ${ex.getMessage}")
-        Future.successful(InternalServerError(ex.getMessage))
+      case ex: Exception => Future.successful(InternalServerError(ex.getMessage))
     }
   }
 
-  def getBankUsers() = Action.async { implicit request =>
+  def getBankUsers() = Action.async {
     user.getUsers().map {
-      case Left(e) =>
-        println("ended - 404")
-        BadRequest(e.getMessage)
-      case Right(rows) =>
-        println(s"ended - 200 ${rows.head.toString}")
-        Ok(
+      case Left(e) => BadRequest(e.getMessage)
+      case Right(rows) => Ok(
         Json.obj(
           "status" -> 200,
           "description" -> "Users retrieved successfully",
@@ -61,11 +52,51 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
         )
       )
     }.recoverWith {
-      case ex: Exception =>
-        println(s"ended ${ex.getMessage}")
-        Future.successful(InternalServerError(ex.getMessage))
+      case ex: Exception => Future.successful(InternalServerError(ex.getMessage))
     }
   }
 
+  def login(userId: String, password: String) = Action.async {
+    user.getSessionId(userId, password).map {
+      case None => BadRequest("Invalid credentials")
+      case Some(sessionId) => Ok(
+        Json.obj(
+          "status" -> 200,
+          "description" -> "User logged in successfully",
+          "sessionId" -> sessionId
+        )
+      )
+    }.recoverWith {
+      case ex => Future.successful(InternalServerError(ex.getMessage))
+    }
+  }
+
+  def logout(userId: String) = Action.async {
+    user.removeSessionId(userId).map {
+      case Done => Ok(
+        Json.obj(
+          "status" -> 200,
+          "description" -> "User logged out successfully"
+        )
+      )
+    }.recoverWith {
+      case ex => Future.successful(InternalServerError(ex.getMessage))
+    }
+  }
+
+  def updateUser = Action.async(parse.json) { implicit request =>
+    val updateUserRequest = Json.parse(request.body.toString()).as[UpdateUserRequest]
+    user.updateUser(updateUserRequest.userId, updateUserRequest.sessionId, updateUserRequest.updates).map {
+      case Left(e) => BadRequest(e.getMessage)
+      case Right(_) => Ok(
+        Json.obj(
+          "status" -> 200,
+          "description" -> "User updated successfully"
+        )
+      )
+    }.recoverWith {
+      case ex => Future.successful(InternalServerError(ex.getMessage))
+    }
+  }
 
 }

@@ -9,7 +9,8 @@
   "email": "test@test.com",
   "phno": "6790072367",
   "address": "Flat xx, Road x, City x",
-  "password": "somepwd"
+  "password": "somepwd",
+  "isActive": true
 }
 ```
 
@@ -28,7 +29,7 @@
 }
 ```
 
-### 2. UpdateInformation
+### 2. Update
 
 - Request:
 ```json
@@ -54,28 +55,7 @@
 }
 ```
 
-### 3. Deactivate
-
-- Request:
-```json
-{
-  "id": "user_id",
-  "sessionId": "session",
-  "deactivate_reason": ""
-}
-```
-- Validations:
-  - Check if the user exists
-  - Check if the sessionId is valid for user
-- Ideal Response:
-```json
-{
-  "status": 200,
-  "description": "Deactivated the user"
-}
-```
-
-### 4. GetById
+### 3. GetByUserId
 - Request:
 ```json
 {
@@ -100,7 +80,7 @@
 }
 ```
 
-### 5. Login
+### 4. Login
 - Request:
 ```json
 {
