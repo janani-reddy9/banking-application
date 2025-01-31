@@ -18,6 +18,8 @@ A user has an account at the Bank and should be able to control their account th
 
 All the related tables schema is present in [Tables](../database/init.sql), visualization [here](../database/schema-diagram.png).
 
+Generated diagram using - https://dbdiagram.io/d 
+
 Note: 
 
 ### Common Assumptions/Validations across APIs:
