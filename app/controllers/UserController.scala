@@ -1,7 +1,7 @@
 package controllers
 
 import dao.UserDAO
-import models.{CreateUserRequest, DeactivateUserRequest, UpdateUserRequest}
+import models.{CreateUserRequest, UpdateUserRequest}
 import org.apache.pekko.Done
 import play.api.libs.json.{JsArray, JsString, Json}
 import play.api.mvc.{BaseController, ControllerComponents}
@@ -9,11 +9,11 @@ import play.api.mvc.{BaseController, ControllerComponents}
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class UserController @Inject()(val controllerComponents: ControllerComponents, user: UserDAO)(implicit ec: ExecutionContext) extends BaseController {
+class UserController @Inject()(val controllerComponents: ControllerComponents, userDAO: UserDAO)(implicit ec: ExecutionContext) extends BaseController {
 
   def createBankUser = Action.async(parse.json) { implicit request =>
     val createUserRequest = Json.parse(request.body.toString()).as[CreateUserRequest]
-    user.createUser(createUserRequest).map {
+    userDAO.createUser(createUserRequest).map {
       case Left(e) => BadRequest(e.getMessage)
       case Right(_) => Ok(
         Json.obj(
@@ -27,7 +27,7 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
   }
 
   def getBankUserByValidId(id: String) = Action.async {
-    user.getUserIdByvalidId(id).map{
+    userDAO.getUserIdByvalidId(id).map{
       case Left(e) => BadRequest(e.getMessage)
       case Right(rows) => Ok(
         Json.obj(
@@ -42,7 +42,7 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
   }
 
   def getBankUsers() = Action.async {
-    user.getUsers().map {
+    userDAO.getUsers().map {
       case Left(e) => BadRequest(e.getMessage)
       case Right(rows) => Ok(
         Json.obj(
@@ -57,7 +57,7 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
   }
 
   def login(userId: String, password: String) = Action.async {
-    user.getSessionId(userId, password).map {
+    userDAO.getSessionId(userId, password).map {
       case None => BadRequest("Invalid credentials")
       case Some(sessionId) => Ok(
         Json.obj(
@@ -72,7 +72,7 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
   }
 
   def logout(userId: String) = Action.async {
-    user.removeSessionId(userId).map {
+    userDAO.removeSessionId(userId).map {
       case Done => Ok(
         Json.obj(
           "status" -> 200,
@@ -86,7 +86,7 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
 
   def updateUser = Action.async(parse.json) { implicit request =>
     val updateUserRequest = Json.parse(request.body.toString()).as[UpdateUserRequest]
-    user.updateUser(updateUserRequest.userId, updateUserRequest.sessionId, updateUserRequest.updates).map {
+    userDAO.updateUser(updateUserRequest.userId, updateUserRequest.sessionId, updateUserRequest.updates).map {
       case Left(e) => BadRequest(e.getMessage)
       case Right(_) => Ok(
         Json.obj(

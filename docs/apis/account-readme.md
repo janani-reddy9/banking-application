@@ -22,29 +22,7 @@
 }
 ```
 
-2. Deactivate
-- Request:
-```json
-{
-  "accountId": "",
-  "userId": "",
-  "sessionId": ""
-}
-```
-- Validations:
-  - userId should exist
-  - accountId should exist
-  - userId and accountId should be mapped
-  - sessionId should be valid for provided userId and accountId
-- Response:
-```json
-{
-  "status": 200,
-  "description": "Account is deactivated"
-}
-```
-
-3. GetByAccountId
+2. GetByAccountId
 - Request:
 ```json
 {
@@ -71,3 +49,8 @@
   }
 }
 ```
+
+3. CreateJointAccount
+
+4. UpdateJointAccount
+

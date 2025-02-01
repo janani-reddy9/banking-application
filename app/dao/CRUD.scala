@@ -17,7 +17,17 @@ class CRUD @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(im
 
   def insert(tableName: String, values: String): Future[Either[Exception, Int]] = {
     val insertCommand = s"INSERT INTO $tableName VALUES($values);"
+    insertToDB(insertCommand)
+  }
+
+  def insertAll(tableName: String, values: Seq[String]): Future[Either[SQLException, Int]] = {
+    val insertCommand = values.map(value => s"INSERT INTO $tableName VALUES($value);").mkString(" ")
+    insertToDB(insertCommand)
+  }
+
+  private def insertToDB(insertCommand: String): Future[Either[SQLException, Int]] = {
     logger.info(s"sql insert- $insertCommand")
+    println(s"sql insert - $insertCommand")
     val query = sqlu"#$insertCommand"
     val runQuery = Try(db.run(query))
     runQuery match {
@@ -56,6 +66,8 @@ class CRUD @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(im
     val finalColumnsToRetrive = if (columnsToRetrive.isEmpty) "*" else columnsToRetrive.get
     val finalCondition = if (condition.isEmpty) "" else condition.get
     val selectCommand = s"select $finalColumnsToRetrive FROM $tableName $finalCondition;"
+    logger.info(s"sql select - $selectCommand")
+    println(s"sql select - $selectCommand")
     val query = sql"#$selectCommand".as[T]
     val runQuery = Try(db.run(query))
     runQuery match {
