@@ -47,8 +47,7 @@ class AccountsDAO  @Inject()(configuration: Configuration, crud: CRUD, userDAO: 
     }
   }
 
-  def getAccountById(id: String): Future[Either[SQLException, List[Account]]] =
-    crud
+  def getAccountById(id: String): Future[Either[SQLException, List[Account]]] = crud
       .select[Account](
         tableName = accountsTableName,
         condition = Some(s"id = \'$id\'")
