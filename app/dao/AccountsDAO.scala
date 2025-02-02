@@ -65,28 +65,3 @@ class AccountsDAO  @Inject()(configuration: Configuration, crud: CRUD, userDAO: 
   }
 
 }
-
-/*
-
-{
-      val accountInfo = accountInfoEither match {
-        case Left(ex) => throw ex
-        case Right(account) => account.head
-      }
-      val userInfo = userAccountInfoEither match {
-        case Left(ex) => throw ex
-        case Right(userAccount) => userAccount.map(x => x.userId)
-      }
-      val accountType = getAccountTypeName(accountTypeId = accountInfo.accountTypeId)
-      accountType.map(acctype =>
-        Account(accountId = id, userIds = userInfo, accountType = acctype, balance = accountInfo.balance)
-      )
-    }
-
-
-    _ = accountType match {
-  case (Right(accountType) == Right("single") && userIds.nonEmpty) => throw new Exception ("Only one user is allowed")
-  case (Right(accountType) == Right("joint") && userIds.size != 1) => throw new Exception ("Only two users are allowed")
-  case Left(ex) => Left(ex)
-}
- */
