@@ -4,7 +4,6 @@ import models.{Account, AccountTable, AccountUserMapping}
 import play.api.Configuration
 import slick.jdbc.GetResult
 
-import java.sql.SQLException
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -45,6 +44,7 @@ class AccountsDAO  @Inject()(configuration: Configuration, crud: CRUD, userDAO: 
   }
 
   def getAccountById(id: String): Future[Account] = {
+    isAccountValid(id).map(valid => if(!valid) throw new Exception("Account id doesn't exist"))
     val accountData = crud
       .select[AccountTable](
         tableName = accountsTableName,
@@ -62,6 +62,12 @@ class AccountsDAO  @Inject()(configuration: Configuration, crud: CRUD, userDAO: 
     } yield {
       Account(accountId = id, userIds = users, accountType = accountType, balance = accountInfo.head.balance)
     }
+  }
+
+  def isAccountValid(accountId: String): Future[Boolean] = {
+    crud
+      .select[Int](tableName = accountsTableName, columnsToRetrive = Some("count(*)"), condition = Some(s"WHERE id=\'$accountId\'"))
+      .map(columns => if(columns.head != 1) true else false)
   }
 
 }
