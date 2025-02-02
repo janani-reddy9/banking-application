@@ -30,5 +30,3 @@ case class User(id: String, validId: String,  name: String, email: String, addre
     "isActive" -> isActive
   ).toString()
 }
-
-case class DeactivateUserRequest(userId: String, sessionId: String, deactivationReason: String)

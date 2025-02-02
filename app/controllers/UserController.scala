@@ -1,35 +1,38 @@
 package controllers
 
 import dao.UserDAO
-import models.{CreateUserRequest, DeactivateUserRequest, UpdateUserRequest}
+import models.{CreateUserRequest, UpdateUserRequest}
 import org.apache.pekko.Done
-import play.api.libs.json.{JsArray, JsString, Json}
-import play.api.mvc.{BaseController, ControllerComponents}
+import play.api.libs.json.{JsArray, JsString, JsValue, Json}
+import play.api.mvc.{Action, AnyContent, BaseController, ControllerComponents}
+import utils.Miscs.generateUniqueId
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class UserController @Inject()(val controllerComponents: ControllerComponents, user: UserDAO)(implicit ec: ExecutionContext) extends BaseController {
+class UserController @Inject()(val controllerComponents: ControllerComponents, userDAO: UserDAO)(implicit ec: ExecutionContext) extends BaseController {
 
-  def createBankUser = Action.async(parse.json) { implicit request =>
+  def createBankUser(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     val createUserRequest = Json.parse(request.body.toString()).as[CreateUserRequest]
-    user.createUser(createUserRequest).map {
-      case Left(e) => BadRequest(e.getMessage)
-      case Right(_) => Ok(
-        Json.obj(
-          "status" -> 200,
-          "description" -> "User created successfully"
+    val userId = generateUniqueId
+    userDAO.createUser(createUserRequest, userId).map {
+      x =>
+        Ok(
+          Json.obj(
+            "status" -> 200,
+            "description" -> "User created successfully",
+            "id" -> s"$userId",
+            "rows_inserted" -> x
+          )
         )
-      )
     }.recoverWith {
       case ex => Future.successful(InternalServerError(ex.getMessage))
     }
   }
 
-  def getBankUserByValidId(id: String) = Action.async {
-    user.getUserIdByvalidId(id).map{
-      case Left(e) => BadRequest(e.getMessage)
-      case Right(rows) => Ok(
+  def getBankUserByValidId(id: String): Action[AnyContent] = Action.async {
+    userDAO.getUserIdByvalidId(id).map{
+      rows => Ok(
         Json.obj(
           "status" -> 200,
           "description" -> "User retrieved successfully",
@@ -41,10 +44,9 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
     }
   }
 
-  def getBankUsers() = Action.async {
-    user.getUsers().map {
-      case Left(e) => BadRequest(e.getMessage)
-      case Right(rows) => Ok(
+  def getBankUsers(): Action[AnyContent] = Action.async {
+    userDAO.getUsers().map {
+      rows => Ok(
         Json.obj(
           "status" -> 200,
           "description" -> "Users retrieved successfully",
@@ -56,8 +58,8 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
     }
   }
 
-  def login(userId: String, password: String) = Action.async {
-    user.getSessionId(userId, password).map {
+  def login(userId: String, password: String): Action[AnyContent] = Action.async {
+    userDAO.getSessionId(userId, password).map {
       case None => BadRequest("Invalid credentials")
       case Some(sessionId) => Ok(
         Json.obj(
@@ -71,8 +73,8 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
     }
   }
 
-  def logout(userId: String) = Action.async {
-    user.removeSessionId(userId).map {
+  def logout(userId: String): Action[AnyContent] = Action.async {
+    userDAO.removeSessionId(userId).map {
       case Done => Ok(
         Json.obj(
           "status" -> 200,
@@ -84,14 +86,14 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
     }
   }
 
-  def updateUser = Action.async(parse.json) { implicit request =>
+  def updateUser(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     val updateUserRequest = Json.parse(request.body.toString()).as[UpdateUserRequest]
-    user.updateUser(updateUserRequest.userId, updateUserRequest.sessionId, updateUserRequest.updates).map {
-      case Left(e) => BadRequest(e.getMessage)
-      case Right(_) => Ok(
+    userDAO.updateUser(updateUserRequest.userId, updateUserRequest.sessionId, updateUserRequest.updates).map {
+      updatedRows => Ok(
         Json.obj(
           "status" -> 200,
-          "description" -> "User updated successfully"
+          "description" -> "User updated successfully",
+          "updatedUsersCount" -> updatedRows
         )
       )
     }.recoverWith {
