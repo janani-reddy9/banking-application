@@ -49,8 +49,3 @@
   }
 }
 ```
-
-3. CreateJointAccount
-
-4. UpdateJointAccount
-

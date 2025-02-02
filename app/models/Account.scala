@@ -2,7 +2,13 @@ package models
 
 import play.api.libs.json.{Json, OFormat}
 
-case class Account(accountId: String, accountType: String, balance: Double)
+object Account {
+  implicit val accountFormat: OFormat[Account] = Json.format[Account]
+}
+
+case class Account(accountId: String, userIds: List[String], accountType: String, balance: Double)
+
+case class AccountTable(accountId: String, accountTypeId: Int, balance: Double)
 
 case class AccountCreateRequest(userId: String, sessionId: String, userIds: List[String] = List.empty, accountTypeId: Int = 1, balance: Double = 1000)
 

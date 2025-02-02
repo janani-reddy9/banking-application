@@ -32,6 +32,11 @@ class AccountsControllerSpec extends PlaySpec with GuiceOneAppPerSuite {
         .withHeaders(("Content-Type", "application/json")))
       println(contentAsString(createAccountRes))
       status(createAccountRes) mustEqual OK
+      val accountId = (contentAsJson(createAccountRes) \ "accountId").as[String]
+
+      val getAccountRes = accountsController.getAccountById(accountId).apply(FakeRequest(GET, s"/accounts/getAccount/$accountId"))
+      println(contentAsString(getAccountRes))
+      status(getAccountRes) mustEqual OK
     }
 
     def createUser(): (String, String) = {
