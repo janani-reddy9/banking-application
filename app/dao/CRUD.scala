@@ -77,10 +77,10 @@ class CRUD @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(im
         value.flatMap(rows => Future.successful(rows.toList))
       case Failure(exception: SQLException) =>
         logger.error(s"SQL Exception occurred: ${exception.printStackTrace()}")
-         Future.failed(exception)
+         throw exception
       case Failure(e) =>
         logger.error(s"An unexpected error occurred: ${e.printStackTrace()}")
-        Future.failed(e)
+        throw e
     }
   }
 

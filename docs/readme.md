@@ -14,6 +14,12 @@ A user has an account at the Bank and should be able to control their account th
 
 ## Solution
 
+We need to not allow overdraft for Individual or Joint accounts. Considering this to run on a single instance/machine.
+
+Store the transactions cache with accountId as key. When there is any current transaction we check the cache by accountId, any other transaction is going on we will wait 100ms for 3 times before saying another transaction is in progress. If no other transaction is in progress, the current triggered transaction can be processed.
+
+This implementation stays same for both Individual/Joint account, as the account level change of adding new transaction or updating account balance stays the same.
+
 ### Database
 
 All the related tables schema is present in [Tables](../database/init.sql), visualization [here](../database/schema-diagram.png).
