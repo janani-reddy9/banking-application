@@ -17,36 +17,38 @@ class TransactionsDAO @Inject()(@NamedCache("transactions-cache") transactionsCa
     val sessionvalidityFut = userDAO.isSessionValid(userId, sessionId)
     val accountValidityFut = accountsDAO.isAccountValid(accountId)
     val accountFut: Future[Account] = accountsDAO.getAccountById(accountId)
-    val valuesToInsertInAccTblFut = for {
+    val balance = for {
       sessionvalidity <- sessionvalidityFut
       accountValidity <- accountValidityFut
-      transactionValidity <- isAnotherTransactionInProgress(formatTransactionsCacheKey(userId, accountId))
+      transactionValidity <- isAnotherTransactionInProgress(formatTransactionsCacheKey(accountId))
       account <- accountFut
     } yield {
       require(sessionvalidity, "Invalid Session")
       require(accountValidity, "Account Doesn't exist")
-      require(transactionValidity, "Another Transaction is in progress")
-      require(!(transactionType == "withdraw" || transactionType =="deposit"), "Transaction type is not supported")
+      require(!transactionValidity, "Another Transaction is in progress")
+      require(transactionType == "withdraw" || transactionType == "deposit", "Transaction type is not supported")
       (transactionType, account.balance) match {
-        case ("withdraw", balance) if balance >= amount => Seq(s"\'$accountId\'", s"\'${account.accountId}\'", account.balance - amount).mkString(",")
-        case ("deposit", _) => Seq(s"\'$accountId\'", s"\'${account.accountId}\'", account.balance + amount).mkString(", ")
+        case ("withdraw", balance) if balance >= amount =>
+          account.balance - amount
+        case ("deposit", _) =>
+          account.balance + amount
       }
     }
-    val valuesToInsertInTransTbl = Seq(transactionId, accountId, userId, transactionType, amount, System.currentTimeMillis().toString).mkString(", ")
-    valuesToInsertInAccTblFut.flatMap(
-      values => {
-        val key = formatTransactionsCacheKey(userId, accountId)
+    val valuesToInsertInTransTbl = Seq(s"\'$transactionId\'", s"\'$accountId\'", s"\'$userId\'", s"\'$transactionType\'", amount, s"\'${System.currentTimeMillis()}\'").mkString(", ")
+    balance.flatMap(
+      value => {
+        val key = formatTransactionsCacheKey(accountId)
         val _ = setTransactionCache(key, sessionId)
         val transaction = crud.insert(transactionTableName, valuesToInsertInTransTbl)
-        transaction.flatMap(insertedRows => crud.insert(accountsDAO.accountsTableName, values))
+        transaction.flatMap(insertedRows => crud.update(accountsDAO.accountsTableName, s"balance = $value", s"id = \'$accountId\'"))
         val _ = removeTransactionCache(key)
         transaction
       }
     ).recoverWith {
       case e: Exception =>
-        val key = formatTransactionsCacheKey(userId, accountId)
+        val key = formatTransactionsCacheKey(accountId)
         val _ = removeTransactionCache(key)
-        Future.failed(e)
+        throw e
     }
   }
 
@@ -54,7 +56,7 @@ class TransactionsDAO @Inject()(@NamedCache("transactions-cache") transactionsCa
 
   private def removeTransactionCache(key: String): Future[Done] = transactionsCache.remove(key)
 
-  private def formatTransactionsCacheKey(userId: String, accountId: String): String = s"$userId::$accountId"
+  private def formatTransactionsCacheKey(accountId: String): String = s"$accountId"
 
   def getCache(key: String): Future[Option[String]] = transactionsCache.get[String](key)
 
