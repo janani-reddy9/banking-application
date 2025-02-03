@@ -4,6 +4,7 @@
 - Request:
 ```json
 {
+  "accountId": "account1",
   "userSessionId": "session",
   "transactionType": "withdraw|deposit",
   "amount": 120.1

@@ -4,7 +4,6 @@ import models.{Account, AccountTable, AccountUserMapping}
 import play.api.Configuration
 import slick.jdbc.GetResult
 
-import java.sql.SQLException
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -12,7 +11,7 @@ class AccountsDAO  @Inject()(configuration: Configuration, crud: CRUD, userDAO: 
 
   val accountsTableName: String = configuration.get[String]("table.account")
 
-  def createAccount(accountId: String, userId: String, sessionId: String, userIds: List[String], accountTypeId: Int, balance: Double): Future[Int] = {
+  def createAccount(accountId: String, userId: String, sessionId: String, userIds: List[String], accountTypeId: String, balance: Double): Future[Int] = {
     for {
       sessionValidity <- userDAO.isSessionValid(userId, sessionId)
       _ = if (!sessionValidity) throw new Exception("Invalid session")
@@ -25,7 +24,7 @@ class AccountsDAO  @Inject()(configuration: Configuration, crud: CRUD, userDAO: 
     } yield insertToAccTblRes
   }
 
-  private def getAccountTypeName(accountTypeId: Int): Future[String] = {
+  private def getAccountTypeName(accountTypeId: String): Future[String] = {
     crud
       .select[String]("account_type", Some("name"), Some(s"WHERE id = \'$accountTypeId\'"))
       .map{
@@ -33,8 +32,8 @@ class AccountsDAO  @Inject()(configuration: Configuration, crud: CRUD, userDAO: 
       }
   }
 
-  private def insertToMappingTbl(accountTypeId: Int, userId: String, accountId: String, userIds: List[String]): Future[Int] = {
-    if (accountTypeId == 1) {
+  private def insertToMappingTbl(accountTypeId: String, userId: String, accountId: String, userIds: List[String]): Future[Int] = {
+    if (accountTypeId == "1") {
       val valuesToInsertInMapAccTbl = Seq(accountId, userId).map(value => s"\'$value\'").mkString(",")
       crud.insert("account_user_mapping", valuesToInsertInMapAccTbl)
     } else {
@@ -45,11 +44,12 @@ class AccountsDAO  @Inject()(configuration: Configuration, crud: CRUD, userDAO: 
   }
 
   def getAccountById(id: String): Future[Account] = {
+    isAccountValid(id).map(valid => if(!valid) throw new Exception("Account id doesn't exist"))
     val accountData = crud
       .select[AccountTable](
         tableName = accountsTableName,
         condition = Some(s"WHERE id = \'$id\'")
-      )(GetResult(r => AccountTable(r.nextString(), r.nextInt(), r.nextDouble())))
+      )(GetResult(r => AccountTable(r.nextString(), r.nextString(), r.nextDouble())))
     val userAccountData = crud.select[AccountUserMapping](
       tableName = "account_user_mapping",
       condition = Some(s"WHERE account_id = \'$id\'")
@@ -60,8 +60,14 @@ class AccountsDAO  @Inject()(configuration: Configuration, crud: CRUD, userDAO: 
       users = userAccountInfo.map(x => x.userId)
       accountType <- getAccountTypeName(accountTypeId = accountInfo.head.accountTypeId)
     } yield {
-      Account(accountId = id, userIds = users, accountType = accountType, balance = accountInfo.head.balance)
+      Account(accountId = id, userIds = users, accountType = accountType, accountTypeId = accountInfo.head.accountTypeId, balance = accountInfo.head.balance)
     }
+  }
+
+  def isAccountValid(accountId: String): Future[Boolean] = {
+    crud
+      .select[Int](tableName = accountsTableName, columnsToRetrive = Some("count(*)"), condition = Some(s"WHERE id=\'$accountId\'"))
+      .map(columns => if(columns.head == 1) true else false)
   }
 
 }

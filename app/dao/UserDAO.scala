@@ -8,7 +8,6 @@ import play.api.cache.{AsyncCacheApi, NamedCache}
 import slick.jdbc.GetResult
 import utils.Miscs.generateUniqueId
 
-import java.sql.SQLException
 import javax.inject.Inject
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}

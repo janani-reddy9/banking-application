@@ -36,16 +36,17 @@ class CRUD @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(im
         value
       case Failure(exception: SQLException) =>
         logger.error(s"SQL Exception occurred: ${exception.printStackTrace()}")
-        Future.failed(exception)
+        throw exception
       case Failure(e) =>
         logger.error(s"An unexpected error occurred: ${e.printStackTrace()}")
-        Future.failed(e)
+        throw e
     }
   }
 
   def update(tableName: String, values: String, condition: String): Future[Int] = {
     val updateCommand = s"UPDATE $tableName SET $values WHERE $condition;"
     logger.info(s"sql update - $updateCommand")
+    println(s"sql update - $updateCommand")
     val query = sqlu"#$updateCommand"
     val runQuery = Try(db.run(query))
     runQuery match {
@@ -54,10 +55,10 @@ class CRUD @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(im
         value
       case Failure(exception: SQLException) =>
         logger.error(s"SQL Exception occurred: ${exception.printStackTrace()}")
-        Future.failed(exception)
+        throw exception
       case Failure(e) =>
         logger.error(s"An unexpected error occurred: ${e.printStackTrace()}")
-        Future.failed(e)
+        throw e
     }
   }
 
