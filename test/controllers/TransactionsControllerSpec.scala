@@ -33,4 +33,5 @@ class TransactionsControllerSpec extends PlaySpec with GuiceOneAppPerSuite {
       (contentAsJson(transaction) \ "description").as[String] mustEqual "Transaction created successfully"
     }
   }
+
 }
