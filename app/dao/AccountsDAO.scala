@@ -1,6 +1,6 @@
 package dao
 
-import models.{Account, AccountCreateRequest, AccountTable, AccountUserMapping}
+import models._
 import play.api.Configuration
 import slick.jdbc.GetResult
 
@@ -16,19 +16,26 @@ class AccountsDAO  @Inject()(configuration: Configuration, crud: CRUD, userDAO: 
       sessionValidity <- userDAO.isSessionValid(request.userId, request.sessionId)
       _ = if (!sessionValidity) throw new Exception("Invalid session")
       accountType <- getAccountTypeName(request.accountTypeId)
-      _ = if (accountType == "single" && request.userIds.nonEmpty) throw new Exception("Only one user is allowed")
-         else if(accountType == "joint" && request.userIds.size != 1) throw new Exception("Only two users are allowed")
+      _ = (accountType, request.userIds.size) match {
+        case (Single, size) if size != 0 => throw new Exception("Only one user is allowed")
+        case (Joint, size) if size > 1 => throw new Exception("Only two users are allowed")
+        case (_, _) => "Do nothing, because other invalid cases are handled. So, let the flow go on!"
+      }
       valuesToInsertInAccTbl = Seq(s"\'$accountId\'", s"\'${request.accountTypeId}\'", request.balance).mkString(",")
       insertToAccTblRes <- crud.insert(accountsTableName, valuesToInsertInAccTbl)
       _ <- insertToMappingTbl(request.accountTypeId, request.userId, accountId, request.userIds)
     } yield insertToAccTblRes
   }
 
-  private def getAccountTypeName(accountTypeId: String): Future[String] = {
+  private def getAccountTypeName(accountTypeId: String): Future[AccountTypes] = {
     crud
       .select[String]("account_type", Some("name"), Some(s"WHERE id = \'$accountTypeId\'"))
-      .map{
-        valueList => valueList.head
+      .map {
+        valueList => valueList.head match {
+          case "single" => Single
+          case "joint" => Joint
+          case acc => throw new Exception(s"Invalid account type - $acc")
+        }
       }
   }
 
@@ -60,7 +67,7 @@ class AccountsDAO  @Inject()(configuration: Configuration, crud: CRUD, userDAO: 
       users = userAccountInfo.map(x => x.userId)
       accountType <- getAccountTypeName(accountTypeId = accountInfo.head.accountTypeId)
     } yield {
-      Account(accountId = id, userIds = users, accountType = accountType, accountTypeId = accountInfo.head.accountTypeId, balance = accountInfo.head.balance)
+      Account(accountId = id, userIds = users, accountType = accountType.toString, accountTypeId = accountInfo.head.accountTypeId, balance = accountInfo.head.balance)
     }
   }
 
