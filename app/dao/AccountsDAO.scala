@@ -1,6 +1,6 @@
 package dao
 
-import models.{Account, AccountTable, AccountUserMapping}
+import models.{Account, AccountCreateRequest, AccountTable, AccountUserMapping}
 import play.api.Configuration
 import slick.jdbc.GetResult
 
@@ -11,16 +11,16 @@ class AccountsDAO  @Inject()(configuration: Configuration, crud: CRUD, userDAO: 
 
   val accountsTableName: String = configuration.get[String]("table.account")
 
-  def createAccount(accountId: String, userId: String, sessionId: String, userIds: List[String], accountTypeId: String, balance: Double): Future[Int] = {
+  def createAccount(accountId: String, request: AccountCreateRequest): Future[Int] = {
     for {
-      sessionValidity <- userDAO.isSessionValid(userId, sessionId)
+      sessionValidity <- userDAO.isSessionValid(request.userId, request.sessionId)
       _ = if (!sessionValidity) throw new Exception("Invalid session")
-      accountType <- getAccountTypeName(accountTypeId)
-      _ = if (accountType == "single" && userIds.nonEmpty) throw new Exception("Only one user is allowed")
-         else if(accountType == "joint" && userIds.size != 1) throw new Exception("Only two users are allowed")
-      valuesToInsertInAccTbl = Seq(s"\'$accountId\'", s"\'$accountTypeId\'", balance).mkString(",")
+      accountType <- getAccountTypeName(request.accountTypeId)
+      _ = if (accountType == "single" && request.userIds.nonEmpty) throw new Exception("Only one user is allowed")
+         else if(accountType == "joint" && request.userIds.size != 1) throw new Exception("Only two users are allowed")
+      valuesToInsertInAccTbl = Seq(s"\'$accountId\'", s"\'${request.accountTypeId}\'", request.balance).mkString(",")
       insertToAccTblRes <- crud.insert(accountsTableName, valuesToInsertInAccTbl)
-      _ <- insertToMappingTbl(accountTypeId, userId, accountId, userIds)
+      _ <- insertToMappingTbl(request.accountTypeId, request.userId, accountId, request.userIds)
     } yield insertToAccTblRes
   }
 

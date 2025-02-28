@@ -5,7 +5,7 @@ import models.{CreateUserRequest, UpdateUserRequest}
 import org.apache.pekko.Done
 import play.api.libs.json.{JsArray, JsString, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, BaseController, ControllerComponents}
-import utils.Miscs.generateUniqueId
+import utils.Miscs._
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class UserController @Inject()(val controllerComponents: ControllerComponents, userDAO: UserDAO)(implicit ec: ExecutionContext) extends BaseController {
 
   def createBankUser(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    val createUserRequest = Json.parse(request.body.toString()).as[CreateUserRequest]
+    val createUserRequest = validateJsonWithCaseClass[CreateUserRequest](request.body)
     val userId = generateUniqueId
     userDAO.createUser(createUserRequest, userId).map {
       x =>
