@@ -23,7 +23,7 @@ class TransactionsControllerSpec extends PlaySpec with GuiceOneAppPerSuite {
       val userIdAndPwd2 = createUser(userController)
       val userId2 = userIdAndPwd2._1
 
-      val accountId = createAccount(accountsController, userId1, userId2, sessionId1)
+      val accountId = createAccount(accountsController, userId1, List(userId2), sessionId1, "2")
 
       val transactionBodyJson = Json.toJson(CreateTransactionRequest(accountId, userId1, sessionId1, "deposit", 311.0))
       val transaction = transactionsController.create().apply(FakeRequest(POST, "/transactions/create")
