@@ -4,7 +4,7 @@ import dao.AccountsDAO
 import models.AccountCreateRequest
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, AnyContent, BaseController, ControllerComponents}
-import utils.Miscs
+import utils.Miscs._
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -12,9 +12,9 @@ import scala.concurrent.{ExecutionContext, Future}
 class AccountsController @Inject()(val controllerComponents: ControllerComponents, accountsDAO: AccountsDAO)(implicit ec: ExecutionContext) extends BaseController {
 
   def create(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    val createAccountRequest = Json.parse(request.body.toString()).as[AccountCreateRequest]
-    val accountId = Miscs.generateUniqueId
-    accountsDAO.createAccount(accountId, createAccountRequest.userId, createAccountRequest.sessionId, createAccountRequest.userIds, createAccountRequest.accountTypeId, createAccountRequest.balance).map {
+    val createAccountRequest = validateJsonWithCaseClass[AccountCreateRequest](request.body)
+    val accountId = generateUniqueId
+    accountsDAO.createAccount(accountId, createAccountRequest).map {
       rowsCreated => Ok(
         Json.obj(
           "status" -> 200,

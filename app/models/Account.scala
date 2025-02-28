@@ -17,3 +17,9 @@ object AccountCreateRequest {
 }
 
 case class AccountUserMapping(accountId: String, userId: String)
+
+
+sealed trait AccountTypes
+
+case object Joint extends AccountTypes
+case object Single extends AccountTypes

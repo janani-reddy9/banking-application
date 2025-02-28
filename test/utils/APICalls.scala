@@ -34,8 +34,8 @@ object APICalls {
     (contentAsJson(sessionIdRes) \ "sessionId").as[String]
   }
 
-  def createAccount(accountsController: AccountsController, userId1: String, userId2: String, sessionId: String): String = {
-    val createAccountRequest = models.AccountCreateRequest(userId1, sessionId, List(userId2), "2", 15000)
+  def createAccount(accountsController: AccountsController, userId1: String, userId2: List[String] = List.empty, sessionId: String, accountType: String = "1"): String = {
+    val createAccountRequest = models.AccountCreateRequest(userId1, sessionId, userId2, accountType, 15000)
     val createAccountRequestJson = Json.toJson(createAccountRequest)
     val createAccountRes = accountsController.create().apply(FakeRequest(POST, "/accounts/createAccount").withBody(createAccountRequestJson)
       .withHeaders(("Content-Type", "application/json")))

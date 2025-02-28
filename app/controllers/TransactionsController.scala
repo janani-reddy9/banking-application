@@ -1,11 +1,11 @@
 package controllers
 
-import dao.{TransactionsDAO, UserDAO}
+import dao.TransactionsDAO
 import models.CreateTransactionRequest
 import play.api.libs.json.Format.GenericFormat
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, AnyContent, BaseController, ControllerComponents}
-import utils.Miscs
+import utils.Miscs._
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -13,9 +13,9 @@ import scala.concurrent.{ExecutionContext, Future}
 class TransactionsController @Inject()(val controllerComponents: ControllerComponents, transactionsDAO: TransactionsDAO)(implicit ec: ExecutionContext) extends BaseController {
 
   def create(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    val createTransactionRequest = Json.parse(request.body.toString()).as[CreateTransactionRequest]
-    val transactionId = Miscs.generateUniqueId
-    transactionsDAO.create(transactionId, createTransactionRequest.accountId, createTransactionRequest.userId, createTransactionRequest.sessionId, createTransactionRequest.transactionType, createTransactionRequest.amount).map { transactionId =>
+    val createTransactionRequest = validateJsonWithCaseClass[CreateTransactionRequest](request.body)
+    val transactionId = generateUniqueId
+    transactionsDAO.create(transactionId, createTransactionRequest).map { transactionId =>
       Ok(
         Json.obj(
           "status" -> 200,
