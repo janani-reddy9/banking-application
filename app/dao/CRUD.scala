@@ -1,7 +1,7 @@
 package dao
 
 import org.slf4j
-import play.api.Logger
+import play.api.{Logger, Logging}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.{GetResult, JdbcProfile}
 
@@ -10,10 +10,9 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class CRUD @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends HasDatabaseConfigProvider[JdbcProfile] {
+class CRUD @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends Logging with HasDatabaseConfigProvider[JdbcProfile] {
 
   import profile.api._
-  val logger: slf4j.Logger = Logger(getClass).logger
 
   def insert(tableName: String, values: String): Future[Int] = {
     val insertCommand = s"INSERT INTO $tableName VALUES($values);"
@@ -26,13 +25,11 @@ class CRUD @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(im
   }
 
   private def insertToDB(insertCommand: String): Future[Int] = {
-    logger.info(s"sql insert- $insertCommand")
-    println(s"sql insert - $insertCommand")
+    logger.info(s"INSERT - $insertCommand")
     val query = sqlu"#$insertCommand"
     val runQuery = Try(db.run(query))
     runQuery match {
       case Success(value) =>
-        logger.info(s"Inserted successfully")
         value
       case Failure(exception: SQLException) =>
         logger.error(s"SQL Exception occurred: ${exception.printStackTrace()}")
@@ -45,8 +42,7 @@ class CRUD @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(im
 
   def update(tableName: String, values: String, condition: String): Future[Int] = {
     val updateCommand = s"UPDATE $tableName SET $values WHERE $condition;"
-    logger.info(s"sql update - $updateCommand")
-    println(s"sql update - $updateCommand")
+    logger.info(s"UPDATE - $updateCommand")
     val query = sqlu"#$updateCommand"
     val runQuery = Try(db.run(query))
     runQuery match {
@@ -67,8 +63,7 @@ class CRUD @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(im
     val finalColumnsToRetrive = if (columnsToRetrive.isEmpty) "*" else columnsToRetrive.get
     val finalCondition = if (condition.isEmpty) "" else condition.get
     val selectCommand = s"select $finalColumnsToRetrive FROM $tableName $finalCondition;"
-    logger.info(s"sql select - $selectCommand")
-    println(s"sql select - $selectCommand")
+    logger.info(s"SELECT - $selectCommand")
     val query = sql"#$selectCommand".as[T]
     val runQuery = Try(db.run(query))
     runQuery match {

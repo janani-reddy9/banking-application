@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<!-- https://www.playframework.com/documentation/latest/SettingsLogger -->
-
 <!DOCTYPE configuration>
+
+<!-- The default logback configuration that Play uses in dev mode if no other configuration is provided -->
 
 <configuration>
   <import class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"/>
-  <import class="ch.qos.logback.classic.AsyncAppender"/>
-  <import class="ch.qos.logback.core.FileAppender"/>
   <import class="ch.qos.logback.core.ConsoleAppender"/>
+  <import class="ch.qos.logback.core.FileAppender"/>
 
   <appender name="FILE" class="FileAppender">
     <file>${application.home:-.}/logs/application.log</file>
@@ -31,21 +30,12 @@
     </encoder>
   </appender>
 
-  <appender name="ASYNCFILE" class="AsyncAppender">
-    <appender-ref ref="FILE"/>
-  </appender>
-
-  <appender name="ASYNCSTDOUT" class="AsyncAppender">
-    <appender-ref ref="STDOUT"/>
-  </appender>
-
   <logger name="play" level="INFO"/>
-  <logger name="application" level="DEBUG"/>
+  <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF"/>
 
-  <root level="WARN">
-    <appender-ref ref="ConsoleAppender"/>
-    <appender-ref ref="ASYNCFILE"/>
-    <appender-ref ref="ASYNCSTDOUT"/>
+  <root level="INFO">
+    <appender-ref ref="STDOUT"/>
+    <appender-ref ref="FILE"/>
   </root>
 
 </configuration>

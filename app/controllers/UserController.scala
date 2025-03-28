@@ -10,11 +10,12 @@ import utils.Miscs._
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class UserController @Inject()(val controllerComponents: ControllerComponents, userDAO: UserDAO)(implicit ec: ExecutionContext) extends BaseController {
+class UserController @Inject()(val controllerComponents: ControllerComponents, userDAO: UserDAO)(implicit ec: ExecutionContext) extends AppBaseController {
 
   def createBankUser(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     val createUserRequest = validateJsonWithCaseClass[CreateUserRequest](request.body)
     val userId = generateUniqueId
+    logger.info(s"Creating user with id: $userId for request: ${request.toString()}")
     userDAO.createUser(createUserRequest, userId).map {
       x =>
         Ok(
@@ -26,11 +27,14 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
           )
         )
     }.recoverWith {
-      case ex => Future.successful(InternalServerError(ex.getMessage))
+      case ex =>
+        logger.error(s"Failed request with ex: ${ex.getMessage}")
+        Future.successful(InternalServerError(ex.getMessage))
     }
   }
 
   def getBankUserByValidId(id: String): Action[AnyContent] = Action.async {
+    logger.info(s"Getting user with id: $id")
     userDAO.getUserIdByvalidId(id).map{
       rows => Ok(
         Json.obj(
@@ -40,11 +44,14 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
         )
       )
     }.recoverWith {
-      case ex: Exception => Future.successful(InternalServerError(ex.getMessage))
+      case ex: Exception =>
+        logger.error(s"Failed request with ex: ${ex.getMessage}")
+        Future.successful(InternalServerError(ex.getMessage))
     }
   }
 
   def getBankUsers(): Action[AnyContent] = Action.async {
+    logger.info(s"Getting all users")
     userDAO.getUsers().map {
       rows => Ok(
         Json.obj(
@@ -54,11 +61,14 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
         )
       )
     }.recoverWith {
-      case ex: Exception => Future.successful(InternalServerError(ex.getMessage))
+      case ex: Exception =>
+        logger.error(s"Failed request with ex: ${ex.getMessage}")
+        Future.successful(InternalServerError(ex.getMessage))
     }
   }
 
   def login(userId: String, password: String): Action[AnyContent] = Action.async {
+    logger.info(s"Logging in for $userId")
     userDAO.getSessionId(userId, password).map {
       case None => BadRequest("Invalid credentials")
       case Some(sessionId) => Ok(
@@ -69,11 +79,14 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
         )
       )
     }.recoverWith {
-      case ex => Future.successful(InternalServerError(ex.getMessage))
+      case ex =>
+        logger.error(s"Failed request with ex: ${ex.getMessage}")
+        Future.successful(InternalServerError(ex.getMessage))
     }
   }
 
   def logout(userId: String): Action[AnyContent] = Action.async {
+    logger.info(s"Logging out for $userId")
     userDAO.removeSessionId(userId).map {
       case Done => Ok(
         Json.obj(
@@ -82,12 +95,15 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
         )
       )
     }.recoverWith {
-      case ex => Future.successful(InternalServerError(ex.getMessage))
+      case ex =>
+        logger.error(s"Failed request with ex: ${ex.getMessage}")
+        Future.successful(InternalServerError(ex.getMessage))
     }
   }
 
   def updateUser(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     val updateUserRequest = Json.parse(request.body.toString()).as[UpdateUserRequest]
+    logger.info(s"Updating user with id: ${updateUserRequest.userId} request: ${request.toString()}")
     userDAO.updateUser(updateUserRequest.userId, updateUserRequest.sessionId, updateUserRequest.updates).map {
       updatedRows => Ok(
         Json.obj(
@@ -97,7 +113,9 @@ class UserController @Inject()(val controllerComponents: ControllerComponents, u
         )
       )
     }.recoverWith {
-      case ex => Future.successful(InternalServerError(ex.getMessage))
+      case ex =>
+        logger.error(s"Failed request with ex: ${ex.getMessage}")
+        Future.successful(InternalServerError(ex.getMessage))
     }
   }
 
