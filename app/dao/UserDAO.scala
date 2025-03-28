@@ -3,7 +3,7 @@ package dao
 import exceptions.InvalidSessionException
 import models._
 import org.apache.pekko.Done
-import play.api.Configuration
+import play.api.{Configuration, Logging}
 import play.api.cache.{AsyncCacheApi, NamedCache}
 import slick.jdbc.GetResult
 import utils.Miscs.generateUniqueId
@@ -14,7 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class UserDAO @Inject()(@NamedCache("session-cache") sessionCache: AsyncCacheApi, configuration: Configuration, crud: CRUD)(implicit ec: ExecutionContext) {
 
-  val tableName = configuration.get[String]("table.user")
+  val tableName: String = configuration.get[String]("table.user")
 
   def createUser(createRequest: CreateUserRequest, userId: String): Future[Int] = {
     val valuesToInsert = Seq(userId, createRequest.validId, createRequest.name, createRequest.password, createRequest.email, createRequest.address, createRequest.phoneNumber).map(column => s"\'$column\'").mkString(",")

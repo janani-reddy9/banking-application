@@ -10,11 +10,12 @@ import utils.Miscs._
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class TransactionsController @Inject()(val controllerComponents: ControllerComponents, transactionsDAO: TransactionsDAO)(implicit ec: ExecutionContext) extends BaseController {
+class TransactionsController @Inject()(val controllerComponents: ControllerComponents, transactionsDAO: TransactionsDAO)(implicit ec: ExecutionContext) extends AppBaseController {
 
   def create(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     val createTransactionRequest = validateJsonWithCaseClass[CreateTransactionRequest](request.body)
     val transactionId = generateUniqueId
+    logger.info(s"Creating transaction: $transactionId for request: ${request.toString()}")
     transactionsDAO.create(transactionId, createTransactionRequest).map { transactionId =>
       Ok(
         Json.obj(
@@ -25,11 +26,13 @@ class TransactionsController @Inject()(val controllerComponents: ControllerCompo
       )
     }.recoverWith {
       case ex: Exception =>
+        logger.error(s"Failed request with ex: ${ex.getMessage}")
         Future.successful(InternalServerError(ex.getMessage))
     }
   }
 
   def getTransactionById(transactionId: String): Action[AnyContent] = Action.async {
+    logger.info(s"Gettting transaction: $transactionId")
     transactionsDAO.getTransactionById(transactionId).map { transaction =>
       Ok(
         Json.obj(
@@ -41,6 +44,7 @@ class TransactionsController @Inject()(val controllerComponents: ControllerCompo
       )
     }.recoverWith {
       case ex: Exception =>
+        logger.error(s"Failed request with ex: ${ex.getMessage}")
         Future.successful(InternalServerError(ex.getMessage))
     }
   }

@@ -2,16 +2,14 @@ package controllers
 
 import dao.AccountsDAO
 import models.AccountCreateRequest
-import play.api.{Logger, Logging}
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{Action, AnyContent, BaseController, ControllerComponents}
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import utils.Miscs._
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class AccountsController @Inject()(val controllerComponents: ControllerComponents, accountsDAO: AccountsDAO)(implicit ec: ExecutionContext)
-  extends Logging with BaseController {
+class AccountsController @Inject()(val controllerComponents: ControllerComponents, accountsDAO: AccountsDAO)(implicit ec: ExecutionContext) extends AppBaseController {
 
   def create(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     val createAccountRequest = validateJsonWithCaseClass[AccountCreateRequest](request.body)
@@ -38,7 +36,9 @@ class AccountsController @Inject()(val controllerComponents: ControllerComponent
     accountsDAO.getAccountById(accountId).map {
       account => Ok(Json.toJson(account))
     }.recoverWith {
-      case ex => Future.successful(InternalServerError(ex.getMessage))
+      case ex =>
+        logger.error(s"Error getting account with id: $accountId - ${ex.getMessage}")
+        Future.successful(InternalServerError(ex.getMessage))
     }
   }
 
