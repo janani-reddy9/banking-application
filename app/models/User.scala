@@ -1,12 +1,20 @@
 package models
 
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
 object CreateUserRequest {
   implicit val jsonFormat: OFormat[CreateUserRequest] = Json.format[CreateUserRequest]
 }
 
-case class CreateUserRequest(name: String, phoneNumber: String, validId: String, email: String, address: String, password: String)
+case class CreateUserRequest(
+    name: String,
+    phoneNumber: String,
+    validId: String,
+    email: String,
+    address: String,
+    password: String
+)
 
 object FieldDetails {
   implicit val jsonFormat: OFormat[FieldDetails] = Json.format[FieldDetails]
@@ -19,14 +27,24 @@ object UpdateUserRequest {
 
 case class UpdateUserRequest(userId: String, sessionId: String, updates: Seq[FieldDetails])
 
-case class User(id: String, validId: String,  name: String, email: String, address: String, phoneNumber: String, isActive: Boolean) {
-  def toJsonString: String = Json.obj(
-    "id" -> id,
-    "validId" -> validId,
-    "name" -> name,
-    "email" -> email,
-    "address" -> address,
-    "phoneNumber" -> phoneNumber,
-    "isActive" -> isActive
-  ).toString()
+case class User(
+    id: String,
+    validId: String,
+    name: String,
+    email: String,
+    address: String,
+    phoneNumber: String,
+    isActive: Boolean
+) {
+  def toJsonString: String = Json
+    .obj(
+      "id"          -> id,
+      "validId"     -> validId,
+      "name"        -> name,
+      "email"       -> email,
+      "address"     -> address,
+      "phoneNumber" -> phoneNumber,
+      "isActive"    -> isActive
+    )
+    .toString()
 }

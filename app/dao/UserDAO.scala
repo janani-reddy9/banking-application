@@ -1,23 +1,39 @@
 package dao
 
+import javax.inject.Inject
+
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import exceptions.InvalidSessionException
 import models._
 import org.apache.pekko.Done
-import play.api.{Configuration, Logging}
-import play.api.cache.{AsyncCacheApi, NamedCache}
+import play.api.cache.AsyncCacheApi
+import play.api.cache.NamedCache
+import play.api.Configuration
+import play.api.Logging
 import slick.jdbc.GetResult
 import utils.Miscs.generateUniqueId
 
-import javax.inject.Inject
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ExecutionContext, Future}
-
-class UserDAO @Inject()(@NamedCache("session-cache") sessionCache: AsyncCacheApi, configuration: Configuration, crud: CRUD)(implicit ec: ExecutionContext) {
+class UserDAO @Inject() (
+    @NamedCache("session-cache") sessionCache: AsyncCacheApi,
+    configuration: Configuration,
+    crud: CRUD
+)(implicit ec: ExecutionContext) {
 
   val tableName: String = configuration.get[String]("table.user")
 
   def createUser(createRequest: CreateUserRequest, userId: String): Future[Int] = {
-    val valuesToInsert = Seq(userId, createRequest.validId, createRequest.name, createRequest.password, createRequest.email, createRequest.address, createRequest.phoneNumber).map(column => s"\'$column\'").mkString(",")
+    val valuesToInsert = Seq(
+      userId,
+      createRequest.validId,
+      createRequest.name,
+      createRequest.password,
+      createRequest.email,
+      createRequest.address,
+      createRequest.phoneNumber
+    ).map(column => s"\'$column\'").mkString(",")
     crud.insert(tableName, valuesToInsert)
   }
 
@@ -32,7 +48,19 @@ class UserDAO @Inject()(@NamedCache("session-cache") sessionCache: AsyncCacheApi
     crud.select[models.User](
       tableName = tableName,
       condition = Some(s"limit $limit")
-    )(GetResult(r => models.User(r.nextString(), r.nextString(), r.nextString(), r.nextString(), r.nextString(), r.nextString(), r.nextBoolean())))
+    )(
+      GetResult(r =>
+        models.User(
+          r.nextString(),
+          r.nextString(),
+          r.nextString(),
+          r.nextString(),
+          r.nextString(),
+          r.nextString(),
+          r.nextBoolean()
+        )
+      )
+    )
 
   def updateUser(userId: String, sessionId: String, updates: Seq[FieldDetails]): Future[Int] = {
     isSessionValid(userId, sessionId).flatMap {
@@ -46,7 +74,7 @@ class UserDAO @Inject()(@NamedCache("session-cache") sessionCache: AsyncCacheApi
 
   def isSessionValid(userId: String, sessionId: String): Future[Boolean] = {
     val sessionIdFut = sessionCache.get[String](userId)
-    sessionIdFut.map(id => if(id.isDefined && id.get.equals(sessionId)) true else false)
+    sessionIdFut.map(id => if (id.isDefined && id.get.equals(sessionId)) true else false)
   }
 
   def getSessionId(userId: String, password: String): Future[Option[String]] = {
@@ -55,14 +83,14 @@ class UserDAO @Inject()(@NamedCache("session-cache") sessionCache: AsyncCacheApi
       Some("count(*)"),
       Some(s"where id = \'$userId\' and password = \'$password\'")
     )(GetResult(r => r.nextInt()))
-    val sessionIdFut = for{
-      createSession <- retrieveByUserIdAndPassword.map{
-        case result if(result.size == 1) => true
-        case _ => false
+    val sessionIdFut = for {
+      createSession <- retrieveByUserIdAndPassword.map {
+        case result if result.size == 1 => true
+        case _                          => false
       }
-      sessionId <- Future(if(createSession) Some(generateUniqueId) else None)
+      sessionId <- Future(if (createSession) Some(generateUniqueId) else None)
     } yield sessionId
-    val _ = sessionIdFut.map(sessionId => if(sessionId.isDefined) sessionCache.set(userId, sessionId.get, 5.minutes))
+    val _ = sessionIdFut.map(sessionId => if (sessionId.isDefined) sessionCache.set(userId, sessionId.get, 5.minutes))
     sessionIdFut
   }
 

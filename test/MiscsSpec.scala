@@ -1,5 +1,6 @@
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 import utils.Miscs
 
 class MiscsSpec extends PlaySpec {
